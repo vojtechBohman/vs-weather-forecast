@@ -36,13 +36,34 @@ def get_forecast():
 
 def send_to_telegram(text):
     token = os.environ.get("TELEGRAM_TOKEN")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    chat_ids_string = os.environ.get("TELEGRAM_CHAT_ID")
     
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {
-        "chat_id": chat_id,
-        "text": text
-    }
+    if not chat_ids_string:
+        print("Chyba: Nenalezeno žádné Chat ID.")
+        return
+
+    # Rozsekání textu podle čárek na seznam jednotlivých ID
+    chat_ids = chat_ids_string.split(",")
+    
+    # Smyčka, která projde každé ID v seznamu
+    for chat_id in chat_ids:
+        clean_chat_id = chat_id.strip() # Odstraní případné nechtěné mezery
+        if not clean_chat_id:
+            continue
+            
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        payload = {
+            "chat_id": clean_chat_id,
+            "text": text
+        }
+        
+        response = requests.post(url, json=payload)
+        
+        if response.status_code == 200:
+            print(f"Úspěšně odesláno do: {clean_chat_id}")
+        else:
+            print(f"Chyba při odesílání do {clean_chat_id}: {response.text}")
+            
     requests.post(url, json=payload)
 
 if __name__ == "__main__":
