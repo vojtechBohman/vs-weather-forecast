@@ -1,8 +1,7 @@
 import os
-import re
 import requests
-from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 
 def get_dhv_forecasts():
     url = "https://www.dhv.de/wetter/dhv-wetter/"
@@ -11,54 +10,41 @@ def get_dhv_forecasts():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         page.goto(url)
-        # Give it a bit more time (10 seconds) to ensure all external weather scripts load
-        page.wait_for_timeout(10000) 
         
-        # Extract HTML from the main page AND any possible iframes just to be 100% sure
-        raw_html = ""
-        for frame in page.frames:
-            try:
-                raw_html += frame.content()
-            except:
-                pass
-                
+        # Wait for the page to render completely
+        page.wait_for_timeout(5000) 
+        
+        # Get the full HTML content as the browser sees it
+        html_content = page.content()
         browser.close()
         
-    # BeautifulSoup will extract ALL text, including text hidden inside closed accordions
-    soup = BeautifulSoup(raw_html, 'html.parser')
-    text_content = soup.get_text(separator='\n', strip=True)
+    soup = BeautifulSoup(html_content, 'html.parser')
     
-    regions = ["Deutschland", "Nordalpen", "Südalpen"]
+    # Map each region to its exact HTML ID based on your findings
+    region_ids = {
+        "Deutschland": "accordion-578",
+        "Nordalpen": "accordion-579",
+        "Südalpen": "accordion-580"
+    }
+    
     forecasts = {}
     
-    # Smart parsing: Find region name followed by a day abbreviation (Mo., Di., Mi., Do., Fr., Sa., So.)
-    # This completely ignores navigation menus and finds the actual start of the data.
-    days_regex = r"(Mo\.|Di\.|Mi\.|Do\.|Fr\.|Sa\.|So\.)"
-    
-    for i, region in enumerate(regions):
-        # Build a regex pattern like: "Deutschland\s+(Mo.|Di.|...)"
-        pattern = re.compile(rf"{region}\s+{days_regex}")
-        match = pattern.search(text_content)
+    for region, acc_id in region_ids.items():
+        # Find the specific div container
+        accordion_div = soup.find('div', id=acc_id)
         
-        if not match:
-            continue
+        if accordion_div:
+            # Extract text, forcing newlines to maintain readability
+            text = accordion_div.get_text(separator='\n', strip=True)
             
-        start_idx = match.start()
-        
-        # Where does this section end? At the start of the next region's actual forecast
-        end_idx = len(text_content)
-        if i + 1 < len(regions):
-            next_region = regions[i+1]
-            next_pattern = re.compile(rf"{next_region}\s+{days_regex}")
-            next_match = next_pattern.search(text_content)
+            # Clean up the output by removing excessive blank lines
+            cleaned_text = '\n'.join([line for line in text.split('\n') if line.strip()])
             
-            if next_match:
-                end_idx = next_match.start()
-                
-        # Cut the text and save it
-        forecast_text = text_content[start_idx:end_idx].strip()
-        forecasts[region] = forecast_text
-        
+            # Add a nice header for the Telegram message
+            forecasts[region] = f"🌤 --- {region} ---\n{cleaned_text}"
+        else:
+            print(f"Warning: Container with id '{acc_id}' for {region} was not found.")
+            
     return forecasts
 
 def send_to_telegram(forecasts):
@@ -73,8 +59,7 @@ def send_to_telegram(forecasts):
     
     # =================================================================
     # CONFIGURATION: Choose which regions to send. 
-    # If you later want to drop Germany, just remove it from this list:
-    # regions_to_send = ["Nordalpen", "Südalpen"]
+    # To drop Germany later, simply change this list to: ["Nordalpen", "Südalpen"]
     # =================================================================
     regions_to_send = ["Deutschland", "Nordalpen", "Südalpen"]
     
@@ -108,6 +93,6 @@ if __name__ == "__main__":
     extracted_forecasts = get_dhv_forecasts()
     
     if not extracted_forecasts:
-        print("Error: No forecasts could be parsed. The page structure might have changed drastically.")
+        print("Error: No data extracted. Check if the HTML IDs on the website have changed.")
     else:
         send_to_telegram(extracted_forecasts)
