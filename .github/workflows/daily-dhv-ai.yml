@@ -1,4 +1,4 @@
-name: Daily DHV Forecast AI
+name: Daily DHV Forecast
 
 on:
   schedule:
@@ -18,12 +18,14 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          # Upgraded to Python 3.12 to prevent deprecation warnings
+          python-version: '3.12' 
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests playwright beautifulsoup4 google-generativeai
+          # Using the new google-genai package
+          pip install requests playwright beautifulsoup4 google-genai
           playwright install chromium
 
       - name: Run DHV scraper and send
@@ -31,4 +33,4 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python scraper_dhv_ai.py
+        run: python scraper_dhv.py
