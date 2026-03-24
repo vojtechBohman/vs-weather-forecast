@@ -55,7 +55,7 @@ def get_ai_evaluation(region, forecast_text):
         
         # Calling the latest model version
         response = client.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-2.5-flash',
             contents=prompt
         )
         return f"🤖 AI EXPERT ({region}):\n{response.text.strip()}\n\n"
