@@ -1,4 +1,4 @@
-name: Daily DHV Forecast
+name: Daily DHV Forecast AI
 
 on:
   schedule:
