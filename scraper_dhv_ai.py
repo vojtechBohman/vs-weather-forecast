@@ -2,7 +2,8 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
-import google.generativeai as genai
+# Importing the new GenAI library
+from google import genai
 
 def get_dhv_forecasts():
     url = "https://www.dhv.de/wetter/dhv-wetter/"
@@ -36,11 +37,11 @@ def get_dhv_forecasts():
 def get_ai_evaluation(region, forecast_text):
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        return "" # If no key is provided, just skip the AI part gracefully
+        return "" 
         
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Using the new Google GenAI client structure
+        client = genai.Client(api_key=api_key)
         
         prompt = f"""
         Act as an expert paragliding instructor. Read the following weather forecast for '{region}'.
@@ -52,7 +53,11 @@ def get_ai_evaluation(region, forecast_text):
         {forecast_text}
         """
         
-        response = model.generate_content(prompt)
+        # Calling the latest model version
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt
+        )
         return f"🤖 AI EXPERT ({region}):\n{response.text.strip()}\n\n"
     except Exception as e:
         print(f"AI evaluation failed for {region}: {e}")
