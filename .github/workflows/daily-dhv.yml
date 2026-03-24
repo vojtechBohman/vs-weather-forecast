@@ -1,9 +1,9 @@
 name: Daily DHV Forecast
 
 on:
-  schedule:
-    # 06:30 UTC is 07:30 or 08:30 in CZ (depending on daylight saving time)
-    - cron: '30 6 * * *'
+  # schedule:
+  #   # 06:30 UTC is 07:30 or 08:30 in CZ (depending on daylight saving time)
+  #   - cron: '30 6 * * *'
   workflow_dispatch: # Button for manual testing
 
 env:
