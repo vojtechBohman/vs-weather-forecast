@@ -1,6 +1,8 @@
 import os
+import re
 import requests
 from playwright.sync_api import sync_playwright
+from bs4 import BeautifulSoup
 
 def get_dhv_forecasts():
     url = "https://www.dhv.de/wetter/dhv-wetter/"
@@ -9,32 +11,51 @@ def get_dhv_forecasts():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         page.goto(url)
-        page.wait_for_timeout(6000) 
+        # Give it a bit more time (10 seconds) to ensure all external weather scripts load
+        page.wait_for_timeout(10000) 
         
-        text_content = page.locator('body').inner_text()
+        # Extract HTML from the main page AND any possible iframes just to be 100% sure
+        raw_html = ""
+        for frame in page.frames:
+            try:
+                raw_html += frame.content()
+            except:
+                pass
+                
         browser.close()
         
-    # Define the regions we are looking for
+    # BeautifulSoup will extract ALL text, including text hidden inside closed accordions
+    soup = BeautifulSoup(raw_html, 'html.parser')
+    text_content = soup.get_text(separator='\n', strip=True)
+    
     regions = ["Deutschland", "Nordalpen", "Südalpen"]
     forecasts = {}
     
-    # Smart parsing: extract text between the region headers
+    # Smart parsing: Find region name followed by a day abbreviation (Mo., Di., Mi., Do., Fr., Sa., So.)
+    # This completely ignores navigation menus and finds the actual start of the data.
+    days_regex = r"(Mo\.|Di\.|Mi\.|Do\.|Fr\.|Sa\.|So\.)"
+    
     for i, region in enumerate(regions):
-        start_idx = text_content.find(region)
-        if start_idx == -1:
-            continue # Region not found on the page
+        # Build a regex pattern like: "Deutschland\s+(Mo.|Di.|...)"
+        pattern = re.compile(rf"{region}\s+{days_regex}")
+        match = pattern.search(text_content)
         
-        # Find where this region's text ends (the start of the next region)
+        if not match:
+            continue
+            
+        start_idx = match.start()
+        
+        # Where does this section end? At the start of the next region's actual forecast
+        end_idx = len(text_content)
         if i + 1 < len(regions):
             next_region = regions[i+1]
-            end_idx = text_content.find(next_region)
-            if end_idx == -1:
-                end_idx = len(text_content) # Fallback if next region is missing
-        else:
-            # For the last region (Südalpen), just take the rest of the text
-            end_idx = len(text_content)
+            next_pattern = re.compile(rf"{next_region}\s+{days_regex}")
+            next_match = next_pattern.search(text_content)
             
-        # Store the extracted text in our dictionary (cleaning up extra spaces)
+            if next_match:
+                end_idx = next_match.start()
+                
+        # Cut the text and save it
         forecast_text = text_content[start_idx:end_idx].strip()
         forecasts[region] = forecast_text
         
@@ -52,8 +73,8 @@ def send_to_telegram(forecasts):
     
     # =================================================================
     # CONFIGURATION: Choose which regions to send. 
-    # To stop sending Germany later, just delete "Deutschland" from this list.
-    # Example: regions_to_send = ["Nordalpen", "Südalpen"]
+    # If you later want to drop Germany, just remove it from this list:
+    # regions_to_send = ["Nordalpen", "Südalpen"]
     # =================================================================
     regions_to_send = ["Deutschland", "Nordalpen", "Südalpen"]
     
@@ -66,7 +87,7 @@ def send_to_telegram(forecasts):
             if region in forecasts:
                 text = forecasts[region]
                 
-                # We still keep the chunking logic just in case one region is extremely long
+                # Split chunks if text is longer than Telegram's 4096 character limit
                 max_length = 4000 
                 text_chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
                 
@@ -87,6 +108,6 @@ if __name__ == "__main__":
     extracted_forecasts = get_dhv_forecasts()
     
     if not extracted_forecasts:
-        print("Error: No forecasts could be parsed from the page.")
+        print("Error: No forecasts could be parsed. The page structure might have changed drastically.")
     else:
         send_to_telegram(extracted_forecasts)
