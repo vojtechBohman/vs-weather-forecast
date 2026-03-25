@@ -222,30 +222,25 @@ def create_html_page(processed_data):
         f.write(html)
     print("HTML stránka úspěšně vygenerována.")
 
-# =====================================================================
-# MODUL PRO TELEGRAM (ZAKOMENTOVÁNO)
-# Ponecháno pro případnou budoucí inspiraci a rozšíření
-# =====================================================================
-# def send_to_telegram(processed_data):
-#     token = os.environ.get("TELEGRAM_TOKEN")
-#     chat_ids_string = os.environ.get("TELEGRAM_CHAT_ID")
-#     if not chat_ids_string: return
-#
-#     chat_ids = chat_ids_string.split(",")
-#     display_order = ["Česko", "Rakousko", "Severní Alpy", "Jižní Alpy"] 
-#     
-#     for chat_id in chat_ids:
-#         clean_chat_id = chat_id.strip()
-#         if not clean_chat_id: continue
-#             
-#         for region in display_order:
-#             if region in processed_data:
-#                 ai_text = processed_data[region]['ai']
-#                 message = f"🌤 *{region}*\n{ai_text}\n\n👉 Detailní data najdeš na webu."
-#                 
-#                 url = f"https://api.telegram.org/bot{token}/sendMessage"
-#                 requests.post(url, json={"chat_id": clean_chat_id, "text": message[:4000]})
-# =====================================================================
+ def send_to_telegram(processed_data):
+     token = os.environ.get("TELEGRAM_TOKEN")
+     chat_ids_string = os.environ.get("TELEGRAM_CHAT_ID")
+     if not chat_ids_string: return
+
+     chat_ids = chat_ids_string.split(",")
+     display_order = ["Česko", "Rakousko", "Severní Alpy", "Jižní Alpy"] 
+     
+     for chat_id in chat_ids:
+         clean_chat_id = chat_id.strip()
+         if not clean_chat_id: continue
+             
+         for region in display_order:
+             if region in processed_data:
+                 ai_text = processed_data[region]['ai']
+                 message = f"🌤 *{region}*\n{ai_text}\n\n👉 Detailní data najdeš na webu."
+                 
+                 url = f"https://api.telegram.org/bot{token}/sendMessage"
+                 requests.post(url, json={"chat_id": clean_chat_id, "text": message[:4000]})
 
 if __name__ == "__main__":
     print("Startuji stahování dat ze všech zdrojů...")
@@ -269,7 +264,7 @@ if __name__ == "__main__":
         create_html_page(processed_data)
         
         # Volání Telegram funkce je aktuálně zakomentováno:
-        # send_to_telegram(processed_data)
+        send_to_telegram(processed_data)
         
         print("Hotovo! Webová stránka vygenerována.")
     else:
