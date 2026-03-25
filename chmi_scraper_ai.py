@@ -36,7 +36,7 @@ def get_forecast():
                 
             # 2. Combine AI insight with the original forecast        
             final_message = f"{forecast_text.strip()}\n{ai_text}"
-            return 
+            return final_message
             
         return "Předpověď na stránce nebyla nalezena. Struktura webu se možná změnila."
 
@@ -64,7 +64,7 @@ def get_ai_evaluation(forecast_text):
             model='gemini-2.5-flash',
             contents=prompt
         )
-        return f"🤖 AI EXPERT (\n{response.text.strip()}\n\n"
+        return f"🤖 AI EXPERT \n{response.text.strip()}\n\n"
     except Exception as e:
         print(f"AI evaluation failed: {e}")
         return ""
@@ -99,7 +99,7 @@ def send_to_telegram(text):
         else:
             print(f"Chyba při odesílání do {clean_chat_id}: {response.text}")
             
-    requests.post(url, json=payload)
+    # requests.post(url, json=payload)
 
 if __name__ == "__main__":
     forecast = get_forecast()
