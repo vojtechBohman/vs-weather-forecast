@@ -34,11 +34,13 @@ jobs:
           pip install requests playwright beautifulsoup4 google-genai
           playwright install chromium
 
-      - name: Run DHV scraper and send
+      - name: Run scraper and send
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          AUSTRO_USERNAME: ${{ secrets.AUSTRO_USERNAME }}
+          AUSTRO_PASSWORD: ${{ secrets.AUSTRO_PASSWORD }}
         run: python app.py
       
       - name: Setup Pages
