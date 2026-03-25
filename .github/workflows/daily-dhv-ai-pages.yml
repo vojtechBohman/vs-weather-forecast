@@ -1,10 +1,12 @@
 name: Forecast AI with pages
 
 on:
-  # schedule:
-  #   - cron: '30 6 * * *'
+  schedule:
+    # Čas je v UTC. 07:15 UTC odpovídá 08:15 našeho času (případně 09:15 letního)
+    # Předpověď vychází obvykle kolem 06:50 UTC, takže takto budeme mít jistotu, že už tam je.
+    - cron: '15 7 * * *'
   workflow_dispatch:
-
+  
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
