@@ -125,7 +125,7 @@ def get_ai_evaluation(region, forecast_text):
         prompt = AI_PROMPT_TEMPLATE.format(region=region, forecast_text=forecast_text)
         
         response = client.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-2.5-flash',
             contents=prompt
         )
         return response.text.strip()
