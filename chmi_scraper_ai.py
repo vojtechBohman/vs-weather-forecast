@@ -34,8 +34,8 @@ def get_forecast():
             # 1. Get the AI insight
             ai_text = get_ai_evaluation(forecast_text.strip())
                 
-            # 2. Combine AI insight with the original forecast
-            final_message = f"{forecast_text.strip()\n{ai_text}}"
+            # 2. Combine AI insight with the original forecast        
+            final_message = f"{forecast_text.strip()}\n{ai_text}"
             return 
             
         return "Předpověď na stránce nebyla nalezena. Struktura webu se možná změnila."
