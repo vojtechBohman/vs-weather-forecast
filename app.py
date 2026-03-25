@@ -77,10 +77,11 @@ def get_ai_evaluation(region, forecast_text):
         Jsi zkušený instruktor paraglidingu. Přečti si předpověď počasí pro oblast: '{region}'.
         Napiš stručné zhodnocení letových podmínek (max 3-4 věty).
         Publikum jsou zkušení paraglidový piloti s cca 5 lety praxe létání v ČR i Alpách.
-        Německou textovou předpověd (z DHV) ber trochu s rezervou, přehání.
+        Německou textovou předpověd (z DHV) ber s rezervou, přehání.
         Zaměř se i na předpověd pro nadcházející dny.
         Zaměř se na bezpečnost, termiku a sílu větru. Přidej 'out-of-the-box' tip nebo varování, které z textu přímo nekřičí, ale pilot by na něj měl myslet.
-        Rychlost udávej v m/s nebo kmph místo knotů, výšky v metrech místo stop.
+        Rychlost větru udávej v km/h místo knotů, výšku v metrech místo stop.
+        Vynech oslovení, text je součástí stránky, kde není třeba.
         Neformátuj text pomocí markdownu (hvězdičky apod.), piš čistý text.
         
         Předpověď:
