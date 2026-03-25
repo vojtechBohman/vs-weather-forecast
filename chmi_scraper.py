@@ -1,6 +1,7 @@
 import os
 import requests
 from playwright.sync_api import sync_playwright
+from google import genai
 
 def get_forecast():
     url = "https://www.chmi.cz/letectvi/textove-predpovedi-pro-letani/predpoved-pro-sportovni-letani-v-cr"
@@ -29,10 +30,44 @@ def get_forecast():
             if end_marker in forecast_text:
                 end_idx = forecast_text.find(end_marker) + len(end_marker)
                 forecast_text = forecast_text[:end_idx]
+
+            # 1. Get the AI insight
+            ai_text = get_ai_evaluation(forecast_text.strip())
                 
-            return forecast_text.strip()
+            # 2. Combine AI insight with the original forecast
+            final_message = f"{forecast_text.strip()\n{ai_text}}"
+            return 
             
         return "Předpověď na stránce nebyla nalezena. Struktura webu se možná změnila."
+
+def get_ai_evaluation(forecast_text):
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return "" 
+        
+    try:
+        # Using the new Google GenAI client structure
+        client = genai.Client(api_key=api_key)
+        
+        prompt = f"""
+        Act as an expert paragliding instructor. Read the following weather forecast for Czech republic.
+        Write a short evaluation in Czech (max 3 sentences). 
+        Assess thermal conditions, wind/storm risks, and overall safety for flying. Listeners for this message are experienece pilots with more then 5 years of flying.
+        Provide an out-of-the-box perspective or a slightly unconventional tip on how a pilot might approach these specific conditions today.
+        
+        Forecast:
+        {forecast_text}
+        """
+        
+        # Calling the latest model version
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt
+        )
+        return f"🤖 AI EXPERT (\n{response.text.strip()}\n\n"
+    except Exception as e:
+        print(f"AI evaluation failed: {e}")
+        return ""
 
 def send_to_telegram(text):
     token = os.environ.get("TELEGRAM_TOKEN")
