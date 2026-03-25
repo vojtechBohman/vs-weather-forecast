@@ -167,13 +167,12 @@ def create_html_page(processed_data):
             .region-card { background: white; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; }
             .region-header { background: #34495e; color: white; padding: 15px 25px; margin: 0; font-size: 1.5em; }
             
-            /* Standardní 2sloupcový layout pro Česko a DHV */
-            .content-wrapper { display: flex; flex-wrap: wrap; }
-            .col-data { flex: 1; min-width: 300px; padding: 25px; border-right: 1px solid #eaeaea; }
-            .col-ai { flex: 1; min-width: 300px; padding: 25px; background-color: #f8fcf8; }
+            /* Standardní layout (AI nahoře, data dole) */
+            .col-ai { padding: 25px; background-color: #f8fcf8; border-bottom: 1px solid #eaeaea; }
+            .col-data { padding: 25px; }
             
-            /* Speciální 6sloupcový layout pro Rakousko (5 dnů + 1 AI) */
-            .austro-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; padding: 20px; }
+            /* Speciální grid pro Rakousko (3 sloupce = 2 řádky pro 6 položek) */
+            .austro-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 20px; }
             .day-col { background: #fafafa; padding: 15px; border: 1px solid #eaeaea; border-radius: 8px; }
             .day-title { font-weight: 600; color: #34495e; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px; margin-bottom: 12px; font-size: 0.9em; text-align: center; }
             .day-text { white-space: pre-wrap; font-size: 0.85em; line-height: 1.5; color: #444; }
@@ -186,12 +185,9 @@ def create_html_page(processed_data):
             
             .footer { text-align: center; font-size: 0.8em; color: #95a5a6; margin-top: 40px; margin-bottom: 20px; }
             
-            /* Responzivita */
-            @media (max-width: 1200px) { .austro-grid { grid-template-columns: repeat(3, 1fr); } }
-            @media (max-width: 768px) { 
-                .col-data { border-right: none; border-bottom: 1px solid #eaeaea; } 
-                .austro-grid { grid-template-columns: 1fr; }
-            }
+            /* Responzivita pro menší monitory a mobily */
+            @media (max-width: 1000px) { .austro-grid { grid-template-columns: repeat(2, 1fr); } }
+            @media (max-width: 650px) { .austro-grid { grid-template-columns: 1fr; } }
         </style>
     </head>
     <body>
@@ -208,23 +204,29 @@ def create_html_page(processed_data):
             
             html += f'<div class="region-card"><h2 class="region-header">{region}</h2>'
             
+            # Zpracování Rakouska
             if isinstance(raw_data, dict):
                 html += '<div class="austro-grid">'
+                
+                # 1. Nejprve vložíme AI instruktora (zabere první buňku nahoře vlevo)
+                html += f'<div class="austro-ai-col"><h3 class="col-title-ai">🤖 AI Týdenní Instruktor</h3><div class="ai-text">{ai_text}</div></div>'
+                
+                # 2. Pak teprve sázíme předpovědi pro jednotlivé dny
                 for day, txt in raw_data.items():
                     html += f'<div class="day-col"><div class="day-title">{day}</div><div class="day-text">{txt}</div></div>'
-                html += f'<div class="austro-ai-col"><h3 class="col-title-ai">🤖 AI Týdenní Instruktor</h3><div class="ai-text">{ai_text}</div></div>'
+                    
                 html += '</div>'
+            
+            # Zpracování ostatních oblastí (Česko, DHV)
             else:
                 html += f"""
-                <div class="content-wrapper">
-                    <div class="col-data">
-                        <h3 class="col-title-data">📊 Surová předpověď</h3>
-                        <div class="raw-text">{raw_data}</div>
-                    </div>
-                    <div class="col-ai">
-                        <h3 class="col-title-ai">🤖 AI Instruktor</h3>
-                        <div class="ai-text">{ai_text}</div>
-                    </div>
+                <div class="col-ai">
+                    <h3 class="col-title-ai">🤖 AI Instruktor</h3>
+                    <div class="ai-text">{ai_text}</div>
+                </div>
+                <div class="col-data">
+                    <h3 class="col-title-data">📊 Surová předpověď</h3>
+                    <div class="raw-text">{raw_data}</div>
                 </div>
                 """
             html += "</div>"
