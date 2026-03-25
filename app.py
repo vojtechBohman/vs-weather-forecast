@@ -136,6 +136,7 @@ def create_html_page(processed_data):
     <body>
         <div class="container">
             <h1>🌤 Denní letový briefing</h1>
+            <h3>Refresh 0715</h3>
     """
     
     # Pevné pořadí, v jakém chceme oblasti na stránce zobrazit
