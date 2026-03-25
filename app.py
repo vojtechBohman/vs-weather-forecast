@@ -94,25 +94,7 @@ def get_austro_forecasts(browser):
             tab_element.click()
             page.locator(f"{panel_id} p.flreq").wait_for(state="visible", timeout=5000)
             text = page.locator(f"{panel_id} p.flreq").inner_text()
-            
-            # --- ČIŠTĚNÍ TEXTU ---
-            
-            # 1. Odstranění hlavičky (vše do slova "WETTERLAGE:" včetně)
-            header_marker = "WETTERLAGE:"
-            if header_marker in text:
-                # Vezme všechno, co následuje až po tomto slově
-                text = text.split(header_marker)[-1]
-            
-            # 2. Odstranění patičky (vše od "Detaillierte Vorhersagen")
-            footer_marker = "Detaillierte Vorhersagen"
-            if footer_marker in text:
-                # Vezme všechno, co je před tímto textem
-                text = text.split(footer_marker)[0]
-                
-                # Zbavíme se případné osamocené tečky na konci a přebytečných mezer
-                text = text.strip().rstrip('.').strip()
-            
-            forecasts[tab_name] = text
+            forecasts[tab_name] = text.strip()
         except Exception as e:
             print(f"Nepodařilo se načíst den {i} z Austro: {e}")
             
