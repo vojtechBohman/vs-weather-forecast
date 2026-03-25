@@ -75,7 +75,8 @@ def get_ai_evaluation(region, forecast_text):
         client = genai.Client(api_key=api_key)
         prompt = f"""
         Jsi zkušený instruktor paraglidingu. Přečti si předpověď počasí pro oblast: '{region}'.
-        Napiš stručné zhodnocení letových podmínek (max 3-4 věty). 
+        Napiš stručné zhodnocení letových podmínek (max 3-4 věty). Publikum jsou zkušení paraglidový piloti s cca 5 lety praxe létání v ČR i Alpách.
+        Německou textovou předpověd ber trochu s rezervou, přehání.
         Zaměř se na bezpečnost, termiku a sílu větru. Přidej 'out-of-the-box' tip nebo varování, které z textu přímo nekřičí, ale pilot by na něj měl myslet.
         Neformátuj text pomocí markdownu (hvězdičky apod.), piš čistý text.
         
@@ -83,7 +84,7 @@ def get_ai_evaluation(region, forecast_text):
         {forecast_text}
         """
         response = client.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-2.5-flash',
             contents=prompt
         )
         return response.text.strip()
