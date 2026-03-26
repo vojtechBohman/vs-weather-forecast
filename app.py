@@ -25,6 +25,36 @@ Předpověď:
 """
 # =====================================================================
 
+def translate_to_czech(text):
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return text
+        
+    try:
+        client = genai.Client(api_key=api_key)
+        
+        # Prompt instructs the AI to translate everything, including the section headers, 
+        # while keeping the meteorological terminology accurate.
+        prompt = f"""
+        Translate the following Slovenian aviation weather forecast into Czech. 
+        Maintain the exact formatting, including the '--- Section Name ---' dividers, 
+        but translate the section names into Czech as well. 
+        Ensure all meteorological and aviation terminology is correctly translated.
+        
+        Text to translate:
+        {text}
+        """
+        
+        # Using version 2.5 as instructed
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt
+        )
+        return response.text.strip()
+    except Exception as e:
+        print(f"Translation failed: {e}")
+        return text
+
 def get_slovenia_forecast(browser):
     page = browser.new_page()
     page.goto("https://meteo.arso.gov.si/met/sl/aviation/")
@@ -70,8 +100,16 @@ def get_slovenia_forecast(browser):
         
     finally:
         page.close()
+
+    raw_text = forecast_text.strip()
+    
+    # Send the raw Slovenian text to the translator before returning
+    if raw_text:
+        print("Translating Slovenia forecast to Czech...")
+        translated_text = translate_to_czech(raw_text)
+        return translated_text
         
-    return forecast_text.strip()
+    return raw_text
 
 def get_chmi_forecast(browser):
     url = "https://www.chmi.cz/letectvi/textove-predpovedi-pro-letani/predpoved-pro-sportovni-letani-v-cr"
@@ -182,7 +220,7 @@ def get_all_data():
         print("Stahuji DHV...")
         data.update(get_dhv_forecasts(browser))
         print("Stahuji Slovinsko...")
-        data["Slovenia"] = get_slovenia_forecast(browser)
+        data["Slovinsko"] = get_slovenia_forecast(browser)
         browser.close()
     return data
 
@@ -208,7 +246,7 @@ def get_ai_evaluation(region, forecast_text):
 def create_html_page(processed_data):
     from datetime import datetime
     aktualni_cas = datetime.now().strftime("%d. %m. %Y v %H:%M")
-    display_order = ["Česko", "Rakousko", "Severní Alpy", "Jižní Alpy", "Německo", "Slovenia"]
+    display_order = ["Česko", "Rakousko", "Severní Alpy", "Jižní Alpy", "Německo", "Slovinsko"]
     
     # 1. Dynamické vytvoření odkazů pro navigační lištu
     nav_links = ""
@@ -349,7 +387,7 @@ def send_to_telegram(processed_data):
         return
 
     chat_ids = chat_ids_string.split(",")
-    display_order = ["Česko", "Rakousko", "Severní Alpy", "Jižní Alpy"] 
+    display_order = ["Česko", "Rakousko", "Severní Alpy", "Jižní Alpy", "Slovinsko"] 
     
     for chat_id in chat_ids:
         clean_chat_id = chat_id.strip()
