@@ -1,13 +1,15 @@
-name: Daily DHV Forecast
+name: Testing
 
 on:
-  # schedule:
-  #   # 06:30 UTC is 07:30 or 08:30 in CZ (depending on daylight saving time)
-  #   - cron: '30 6 * * *'
-  workflow_dispatch: # Button for manual testing
-
+  workflow_dispatch:
+  
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   run-scraper-dhv:
@@ -19,16 +21,20 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12' 
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests playwright beautifulsoup4
+          # Using the new google-genai package
+          pip install requests playwright beautifulsoup4 google-genai
           playwright install chromium
 
-      - name: Run DHV scraper and send
+      - name: Run scraper and send
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python scraper_dhv.py
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          AUSTRO_USERNAME: ${{ secrets.AUSTRO_USERNAME }}
+          AUSTRO_PASSWORD: ${{ secrets.AUSTRO_PASSWORD }}
+        run: python scraper_austro.py
