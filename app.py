@@ -156,9 +156,18 @@ def get_ai_evaluation(region, forecast_text):
         return "Nepodařilo se vygenerovat AI hodnocení."
 
 def create_html_page(processed_data):
-    # Získání aktuálního času a jeho formátování (např. "26. 03. 2026 v 16:05")
+    from datetime import datetime
     aktualni_cas = datetime.now().strftime("%d. %m. %Y v %H:%M")
+    display_order = ["Česko", "Rakousko", "Severní Alpy", "Jižní Alpy", "Německo"]
     
+    # 1. Dynamické vytvoření odkazů pro navigační lištu
+    nav_links = ""
+    for region in display_order:
+        if region in processed_data:
+            # Mezery v názvech (např. Severní Alpy) nahradíme pomlčkou, aby to fungovalo jako platné HTML ID
+            safe_id = region.replace(" ", "-")
+            nav_links += f'<a href="#{safe_id}">{region}</a>'
+
     html = f"""
     <!DOCTYPE html>
     <html lang="cs">
@@ -167,14 +176,44 @@ def create_html_page(processed_data):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Letové Počasí - Dashboard</title>
         <style>
-            body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; color: #1c1e21; margin: 0; padding: 20px; }}
-            .container {{ max-width: 1400px; margin: 0 auto; }}
-            h1 {{ text-align: center; color: #2c3e50; margin-bottom: 5px; }}
+            /* Plynulé scrollování a odsazení, aby lišta nezakrývala nadpisy */
+            html {{ scroll-behavior: smooth; scroll-padding-top: 80px; }}
             
-            /* Nový styl pro datum a čas vydání */
+            body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; color: #1c1e21; margin: 0; padding: 0 0 20px 0; }}
+            
+            /* --- PŘILEPENÁ NAVIGAČNÍ LIŠTA --- */
+            .sticky-nav {{
+                position: sticky;
+                top: 0;
+                background-color: #2c3e50;
+                padding: 15px 20px;
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                flex-wrap: wrap;
+                z-index: 1000;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            }}
+            .sticky-nav a {{
+                color: #ecf0f1;
+                text-decoration: none;
+                font-weight: 600;
+                padding: 8px 16px;
+                border-radius: 20px;
+                background-color: rgba(255,255,255,0.1);
+                transition: background-color 0.2s, transform 0.2s;
+            }}
+            .sticky-nav a:hover {{
+                background-color: #3498db;
+                transform: translateY(-2px);
+            }}
+            /* --------------------------------- */
+            
+            .container {{ max-width: 1400px; margin: 0 auto; padding: 20px; }}
+            h1 {{ text-align: center; color: #2c3e50; margin-top: 10px; margin-bottom: 5px; }}
             .publish-time {{ text-align: center; color: #7f8c8d; font-size: 0.9em; margin-top: 0; margin-bottom: 30px; font-style: italic; }}
             
-            .region-card {{ background: white; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; }}
+            .region-card {{ background: white; border-radius: 12px; margin-bottom: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; }}
             .region-header {{ background: #34495e; color: white; padding: 15px 25px; margin: 0; font-size: 1.5em; }}
             
             .col-ai {{ padding: 25px; background-color: #f8fcf8; border-bottom: 1px solid #eaeaea; }}
@@ -194,23 +233,33 @@ def create_html_page(processed_data):
             .footer {{ text-align: center; font-size: 0.8em; color: #95a5a6; margin-top: 40px; margin-bottom: 20px; }}
             
             @media (max-width: 1000px) {{ .austro-grid {{ grid-template-columns: repeat(2, 1fr); }} }}
-            @media (max-width: 650px) {{ .austro-grid {{ grid-template-columns: 1fr; }} }}
+            @media (max-width: 650px) {{ 
+                .austro-grid {{ grid-template-columns: 1fr; }} 
+                .sticky-nav {{ padding: 10px; gap: 8px; }}
+                .sticky-nav a {{ padding: 6px 12px; font-size: 0.9em; }}
+            }}
         </style>
     </head>
     <body>
+        <nav class="sticky-nav">
+            {nav_links}
+        </nav>
+        
         <div class="container">
             <h1>🌤 Denní letový briefing</h1>
             <p class="publish-time">Aktualizováno: {aktualni_cas} UTC</p>
     """
-    
-    display_order = ["Česko", "Rakousko", "Severní Alpy", "Jižní Alpy", "Německo"]
     
     for region in display_order:
         if region in processed_data:
             raw_data = processed_data[region]['raw']
             ai_text = processed_data[region]['ai']
             
-            html += f'<div class="region-card"><h2 class="region-header">{region}</h2>'
+            # Bezpečné ID pro HTML (shodné s tím v navigační liště)
+            safe_id = region.replace(" ", "-")
+            
+            # Přidání id="{safe_id}" přímo do obalu dané sekce
+            html += f'<div class="region-card" id="{safe_id}"><h2 class="region-header">{region}</h2>'
             
             if isinstance(raw_data, dict):
                 html += '<div class="austro-grid">'
