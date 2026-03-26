@@ -81,7 +81,15 @@ def send_to_telegram(forecasts):
             url = f"https://api.telegram.org/bot{token}/sendMessage"
             requests.post(url, json={"chat_id": clean_id, "text": chunk})
 
+def get_all_data():
+    data = {}
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        print("Stahuji Rakousko...")
+        data["Rakousko"] = get_austro_forecasts(browser)
+        browser.close()
+    return data
+
 if __name__ == "__main__":
-    browser = p.chromium.launch(headless=True)
-    data = get_austro_forecasts(browser)
+    data = get_all_data()
     send_to_telegram(data)
