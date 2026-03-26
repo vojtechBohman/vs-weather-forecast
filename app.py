@@ -73,7 +73,7 @@ def get_austro_forecasts(browser):
     password = os.environ.get("AUSTRO_PASSWORD")
     
     if not username or not password:
-        return {"Chyba": "Chybí hesla k Austro v GitHub Secrets."}
+        return {"Error": "Missing Austro credentials in GitHub Secrets."}
 
     page = browser.new_page()
     page.goto("https://www.austrocontrol.at/flugwetter/index.php")
@@ -93,14 +93,35 @@ def get_austro_forecasts(browser):
             tab_element = page.locator(tab_id)
             tab_name = tab_element.inner_text().strip().split('\n')[0]
             tab_element.click()
-            page.locator(f"{panel_id} p.flreq").wait_for(state="visible", timeout=5000)
-            text = page.locator(f"{panel_id} p.flreq").inner_text()
-            forecasts[tab_name] = text.strip()
+            
+            text_locator = page.locator(f"{panel_id} p.flreq")
+            text_locator.wait_for(state="visible", timeout=5000)
+            text = text_locator.inner_text()
+            
+            # --- TEXT CLEANING ---
+            
+            # 1. Remove the header (keep everything AFTER the first "WETTERLAGE:")
+            header_marker = "WETTERLAGE:"
+            if header_marker in text:
+                text = text.split(header_marker, 1)[1]
+            
+            # 2. Remove the footer (keep everything BEFORE the first "Detaillierte Vorhersagen")
+            footer_marker = "Detaillierte Vorhersagen"
+            if footer_marker in text:
+                text = text.split(footer_marker, 1)[0]
+            
+            # 3. Clean up whitespace and any trailing dots safely
+            text = text.strip()
+            while text.endswith('.'):
+                text = text[:-1].strip()
+                
+            forecasts[tab_name] = text
+            
         except Exception as e:
-            print(f"Nepodařilo se načíst den {i} z Austro: {e}")
+            print(f"Failed to load day {i} from Austro: {e}")
             
     page.close()
-    return forecasts if forecasts else {"Chyba": "Nepodařilo se stáhnout žádná data."}
+    return forecasts if forecasts else {"Error": "Failed to download any data."}
 
 def get_all_data():
     data = {}
