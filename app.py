@@ -25,6 +25,54 @@ Předpověď:
 """
 # =====================================================================
 
+def get_slovenia_forecast(browser):
+    page = browser.new_page()
+    page.goto("https://meteo.arso.gov.si/met/sl/aviation/")
+    page.wait_for_timeout(3000)
+    
+    forecast_text = ""
+    
+    try:
+        # Out-of-the-box approach: We bypass the entire hover/click UI 
+        # and directly execute the underlying JavaScript function that fetches the data.
+        page.evaluate("load_napoved()")
+        
+        # We wait for the specific data container (e.g., 'vremenska_slika') to become visible
+        page.locator("div#vremenska_slika").wait_for(state="visible", timeout=5000)
+        
+        # Get the fully rendered HTML content
+        html_content = page.content()
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # Dictionary mapping English section titles to their specific HTML IDs on the Slovenian site
+        sections = {
+            "Weather Picture": "vremenska_slika",
+            "Surface Wind": "veter",
+            "Visibility": "vidnost",
+            "Phenomena": "pojavi",
+            "Clouds": "oblaki",
+            "Warnings": "opozorilo",
+            "Glider Forecast": "prognoza",
+            "Outlook for Tomorrow": "obeti"
+        }
+        
+        # Extract the text cleanly using the predefined IDs
+        for section_title, html_id in sections.items():
+            div_element = soup.find(id=html_id)
+            if div_element:
+                # Extract text, replacing any breaks with spaces, and stripping outer whitespace
+                clean_text = div_element.get_text(separator=' ', strip=True)
+                forecast_text += f"--- {section_title} ---\n{clean_text}\n\n"
+                
+    except Exception as e:
+        print(f"Failed to load Slovenia data: {e}")
+        forecast_text = "Error: Could not load the forecast for Slovenia."
+        
+    finally:
+        page.close()
+        
+    return forecast_text.strip()
+
 def get_chmi_forecast(browser):
     url = "https://www.chmi.cz/letectvi/textove-predpovedi-pro-letani/predpoved-pro-sportovni-letani-v-cr"
     page = browser.new_page()
@@ -133,6 +181,8 @@ def get_all_data():
         data["Rakousko"] = get_austro_forecasts(browser)
         print("Stahuji DHV...")
         data.update(get_dhv_forecasts(browser))
+        print("Stahuji Slovinsko...")
+        data["Slovenia"] = get_slovenia_forecast(browser)
         browser.close()
     return data
 
@@ -158,7 +208,7 @@ def get_ai_evaluation(region, forecast_text):
 def create_html_page(processed_data):
     from datetime import datetime
     aktualni_cas = datetime.now().strftime("%d. %m. %Y v %H:%M")
-    display_order = ["Česko", "Rakousko", "Severní Alpy", "Jižní Alpy", "Německo"]
+    display_order = ["Česko", "Rakousko", "Severní Alpy", "Jižní Alpy", "Německo", "Slovenia"]
     
     # 1. Dynamické vytvoření odkazů pro navigační lištu
     nav_links = ""
