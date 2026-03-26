@@ -1,5 +1,6 @@
 import os
 import requests
+from datetime import datetime
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
 from google import genai
@@ -134,7 +135,10 @@ def get_ai_evaluation(region, forecast_text):
         return "Nepodařilo se vygenerovat AI hodnocení."
 
 def create_html_page(processed_data):
-    html = """
+    # Získání aktuálního času a jeho formátování (např. "26. 03. 2026 v 16:05")
+    aktualni_cas = datetime.now().strftime("%d. %m. %Y v %H:%M")
+    
+    html = f"""
     <!DOCTYPE html>
     <html lang="cs">
     <head>
@@ -142,39 +146,40 @@ def create_html_page(processed_data):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Letové Počasí - Dashboard</title>
         <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; color: #1c1e21; margin: 0; padding: 20px; }
-            .container { max-width: 1400px; margin: 0 auto; }
-            h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+            body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; color: #1c1e21; margin: 0; padding: 20px; }}
+            .container {{ max-width: 1400px; margin: 0 auto; }}
+            h1 {{ text-align: center; color: #2c3e50; margin-bottom: 5px; }}
             
-            .region-card { background: white; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; }
-            .region-header { background: #34495e; color: white; padding: 15px 25px; margin: 0; font-size: 1.5em; }
+            /* Nový styl pro datum a čas vydání */
+            .publish-time {{ text-align: center; color: #7f8c8d; font-size: 0.9em; margin-top: 0; margin-bottom: 30px; font-style: italic; }}
             
-            /* Standardní layout (AI nahoře, data dole) */
-            .col-ai { padding: 25px; background-color: #f8fcf8; border-bottom: 1px solid #eaeaea; }
-            .col-data { padding: 25px; }
+            .region-card {{ background: white; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; }}
+            .region-header {{ background: #34495e; color: white; padding: 15px 25px; margin: 0; font-size: 1.5em; }}
             
-            /* Speciální grid pro Rakousko (3 sloupce = 2 řádky pro 6 položek) */
-            .austro-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 20px; }
-            .day-col { background: #fafafa; padding: 15px; border: 1px solid #eaeaea; border-radius: 8px; }
-            .day-title { font-weight: 600; color: #34495e; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px; margin-bottom: 12px; font-size: 0.9em; text-align: center; }
-            .day-text { white-space: pre-wrap; font-size: 0.85em; line-height: 1.5; color: #444; }
-            .austro-ai-col { background-color: #f8fcf8; padding: 15px; border: 1px solid #a3e4d7; border-radius: 8px; }
+            .col-ai {{ padding: 25px; background-color: #f8fcf8; border-bottom: 1px solid #eaeaea; }}
+            .col-data {{ padding: 25px; }}
             
-            .col-title-data { color: #7f8c8d; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #ecf0f1; padding-bottom: 5px; }
-            .col-title-ai { color: #27ae60; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #a3e4d7; padding-bottom: 5px; }
-            .raw-text { white-space: pre-wrap; font-size: 0.95em; line-height: 1.5; color: #444; }
-            .ai-text { white-space: pre-wrap; font-size: 1.0em; line-height: 1.6; color: #1e8449; font-weight: 500; }
+            .austro-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 20px; }}
+            .day-col {{ background: #fafafa; padding: 15px; border: 1px solid #eaeaea; border-radius: 8px; }}
+            .day-title {{ font-weight: 600; color: #34495e; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px; margin-bottom: 12px; font-size: 0.9em; text-align: center; }}
+            .day-text {{ white-space: pre-wrap; font-size: 0.85em; line-height: 1.5; color: #444; }}
+            .austro-ai-col {{ background-color: #f8fcf8; padding: 15px; border: 1px solid #a3e4d7; border-radius: 8px; }}
             
-            .footer { text-align: center; font-size: 0.8em; color: #95a5a6; margin-top: 40px; margin-bottom: 20px; }
+            .col-title-data {{ color: #7f8c8d; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #ecf0f1; padding-bottom: 5px; }}
+            .col-title-ai {{ color: #27ae60; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #a3e4d7; padding-bottom: 5px; }}
+            .raw-text {{ white-space: pre-wrap; font-size: 0.95em; line-height: 1.5; color: #444; }}
+            .ai-text {{ white-space: pre-wrap; font-size: 1.0em; line-height: 1.6; color: #1e8449; font-weight: 500; }}
             
-            /* Responzivita pro menší monitory a mobily */
-            @media (max-width: 1000px) { .austro-grid { grid-template-columns: repeat(2, 1fr); } }
-            @media (max-width: 650px) { .austro-grid { grid-template-columns: 1fr; } }
+            .footer {{ text-align: center; font-size: 0.8em; color: #95a5a6; margin-top: 40px; margin-bottom: 20px; }}
+            
+            @media (max-width: 1000px) {{ .austro-grid {{ grid-template-columns: repeat(2, 1fr); }} }}
+            @media (max-width: 650px) {{ .austro-grid {{ grid-template-columns: 1fr; }} }}
         </style>
     </head>
     <body>
         <div class="container">
             <h1>🌤 Denní letový briefing</h1>
+            <p class="publish-time">Aktualizováno: {aktualni_cas} UTC</p>
     """
     
     display_order = ["Česko", "Rakousko", "Severní Alpy", "Jižní Alpy", "Německo"]
@@ -186,20 +191,12 @@ def create_html_page(processed_data):
             
             html += f'<div class="region-card"><h2 class="region-header">{region}</h2>'
             
-            # Zpracování Rakouska
             if isinstance(raw_data, dict):
                 html += '<div class="austro-grid">'
-                
-                # 1. Nejprve vložíme AI instruktora (zabere první buňku nahoře vlevo)
                 html += f'<div class="austro-ai-col"><h3 class="col-title-ai">🤖 AI Týdenní Instruktor</h3><div class="ai-text">{ai_text}</div></div>'
-                
-                # 2. Pak teprve sázíme předpovědi pro jednotlivé dny
                 for day, txt in raw_data.items():
                     html += f'<div class="day-col"><div class="day-title">{day}</div><div class="day-text">{txt}</div></div>'
-                    
                 html += '</div>'
-            
-            # Zpracování ostatních oblastí (Česko, DHV)
             else:
                 html += f"""
                 <div class="col-ai">
