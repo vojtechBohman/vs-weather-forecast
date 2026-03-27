@@ -25,7 +25,7 @@ Předpověď:
 """
 # =====================================================================
 
-def translate_to_czech(text):
+def translate_and_format_weather(text, source_language):
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         return text
@@ -33,13 +33,17 @@ def translate_to_czech(text):
     try:
         client = genai.Client(api_key=api_key)
         
-        # Prompt instructs the AI to translate everything, including the section headers, 
-        # while keeping the meteorological terminology accurate.
         prompt = f"""
-        Translate the following Slovenian aviation weather forecast into Czech. 
-        Maintain the exact formatting, including the '--- Section Name ---' dividers, 
-        but translate the section names into Czech as well. 
-        Ensure all meteorological and aviation terminology is correctly translated.
+        Translate the following aviation weather forecast from {source_language} into Czech.
+        
+        CRITICAL RULES FOR CONVERSION:
+        1. Wind speeds: Convert knots (kt) to km/h (multiply by 1.852).
+        2. Altitudes: Convert feet (ft) to meters (multiply by 0.3048).
+        3. Flight Levels (FL): Convert to meters (e.g., FL100 = 10,000 ft = approx 3048 m).
+        4. Do not leave any original units (kt, ft, FL) in the text. Write them clearly in km/h and metry.
+        
+        FORMATTING:
+        Improve the graphical layout of the text. Use Markdown (bullet points, bold text for key metrics like wind or altitude) to make the forecast highly structured, modern, and easy to read for a pilot. Keep all original meteorological meaning exactly as it is.
         
         Text to translate:
         {text}
@@ -52,7 +56,7 @@ def translate_to_czech(text):
         )
         return response.text.strip()
     except Exception as e:
-        print(f"Translation failed: {e}")
+        print(f"Translation and conversion failed: {e}")
         return text
 
 def get_slovenia_forecast(browser):
@@ -101,15 +105,7 @@ def get_slovenia_forecast(browser):
     finally:
         page.close()
 
-    raw_text = forecast_text.strip()
-    
-    # Send the raw Slovenian text to the translator before returning
-    if raw_text:
-        print("Translating Slovenia forecast to Czech...")
-        translated_text = translate_to_czech(raw_text)
-        return translated_text
-        
-    return raw_text
+    return forecast_text.strip()
 
 def get_chmi_forecast(browser):
     url = "https://www.chmi.cz/letectvi/textove-predpovedi-pro-letani/predpoved-pro-sportovni-letani-v-cr"
@@ -414,16 +410,39 @@ if __name__ == "__main__":
     raw_data = get_all_data()
     processed_data = {}
     
-    print("Zpracovávám data a žádám AI o hodnocení...")
+    print("Překládám data, převádím jednotky a žádám AI o zhodnocení...")
     for region, text_or_dict in raw_data.items():
-        if isinstance(text_or_dict, dict):
-            combined_text = "\n\n".join([f"--- {day} ---\n{txt}" for day, txt in text_or_dict.items()])
+        
+        # --- 1. TRANSLATION AND UNIT CONVERSION ---
+        translated_data = text_or_dict
+        
+        if region == "Rakousko":
+            translated_data = {}
+            for day, txt in text_or_dict.items():
+                print(f" -> Translating {region} ({day})...")
+                translated_data[day] = translate_and_format_weather(txt, "German")
+                
+        elif region in ["Německo", "Severní Alpy", "Jižní Alpy"]:
+            print(f" -> Translating {region}...")
+            translated_data = translate_and_format_weather(text_or_dict, "German")
+            
+        elif region == "Slovenia":
+            print(f" -> Translating {region}...")
+            translated_data = translate_and_format_weather(text_or_dict, "Slovenian")
+            
+        # Region "Česko" is skipped and remains strictly in the original Czech
+        
+        # --- 2. AI EVALUATION ---
+        # The AI Instructor now evaluates the beautifully translated Czech text
+        if isinstance(translated_data, dict):
+            combined_text = "\n\n".join([f"--- {day} ---\n{txt}" for day, txt in translated_data.items()])
             ai_evaluation = get_ai_evaluation(region, combined_text)
         else:
-            ai_evaluation = get_ai_evaluation(region, text_or_dict)
+            ai_evaluation = get_ai_evaluation(region, translated_data)
             
+        # --- 3. STORE THE RESULTS ---
         processed_data[region] = {
-            'raw': text_or_dict,
+            'raw': translated_data, # Contains the nicely formatted Markdown text
             'ai': ai_evaluation
         }
         
