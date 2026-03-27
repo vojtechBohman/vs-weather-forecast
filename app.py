@@ -33,7 +33,7 @@ def translate_and_format_weather(text, source_language):
     try:
         client = genai.Client(api_key=api_key)
         
-        prompt = f"""
+        pprompt = f"""
         Translate the following aviation weather forecast from {source_language} into Czech.
         
         CRITICAL RULES FOR CONVERSION:
@@ -42,8 +42,11 @@ def translate_and_format_weather(text, source_language):
         3. Flight Levels (FL): Convert to meters (e.g., FL100 = 10,000 ft = approx 3048 m).
         4. Do not leave any original units (kt, ft, FL) in the text. Write them clearly in km/h and metry.
         
-        FORMATTING:
-        Improve the graphical layout of the text. Use Markdown (bullet points, bold text for key metrics like wind or altitude) to make the forecast highly structured, modern, and easy to read for a pilot. Keep all original meteorological meaning exactly as it is.
+        FORMATTING (CRITICAL):
+        Improve the graphical layout of the text to make it highly structured, modern, and easy to read.
+        HOWEVER, you must ONLY use standard HTML tags for formatting (e.g., <b> for bold, <ul> and <li> for lists, <br> for line breaks).
+        DO NOT use Markdown under any circumstances. No asterisks (*), no hashes (#).
+        Keep all original meteorological meaning exactly as it is.
         
         Text to translate:
         {text}
@@ -426,7 +429,7 @@ if __name__ == "__main__":
             print(f" -> Translating {region}...")
             translated_data = translate_and_format_weather(text_or_dict, "German")
             
-        elif region == "Slovenia":
+        elif region == "Slovinsko":
             print(f" -> Translating {region}...")
             translated_data = translate_and_format_weather(text_or_dict, "Slovenian")
             
