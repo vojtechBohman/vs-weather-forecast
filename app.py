@@ -33,7 +33,7 @@ def translate_and_format_weather(text, source_language):
     try:
         client = genai.Client(api_key=api_key)
         
-        pprompt = f"""
+        prompt = f"""
         Translate the following aviation weather forecast from {source_language} into Czech.
         
         CRITICAL RULES FOR CONVERSION:
