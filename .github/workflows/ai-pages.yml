@@ -4,10 +4,16 @@ on:
   schedule:
     # Čas je v UTC. 07:15 UTC odpovídá 08:15 našeho času (případně 09:15 letního)
     # Předpověď vychází obvykle kolem 06:50 UTC, takže takto budeme mít jistotu, že už tam je.
-    # - cron: '58 6 * * *'
+     - cron: '03 6 * * *'
     # Evening run
     # - cron: '03 19 * * *'
-    workflow_dispatch:
+  workflow_dispatch:
+   inputs:
+     enable_translation:
+       description: 'Enable AI Translation (costs API credits)'
+       required: false
+       type: boolean
+       default: false
   
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -43,6 +49,8 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           AUSTRO_USERNAME: ${{ secrets.AUSTRO_USERNAME }}
           AUSTRO_PASSWORD: ${{ secrets.AUSTRO_PASSWORD }}
+          # Pokud běží přes cron, bere defaultní false. Pokud přes tlačítko, vezme hodnotu z checkboxu.
+          ENABLE_TRANSLATION: ${{ github.event.inputs.enable_translation || 'false' }}
         run: python app.py
       
       - name: Setup Pages
