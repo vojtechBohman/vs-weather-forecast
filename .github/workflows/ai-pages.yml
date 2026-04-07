@@ -7,7 +7,7 @@ on:
     # - cron: '58 6 * * *'
     # Evening run
     # - cron: '03 19 * * *'
-  workflow_dispatch:
+    workflow_dispatch:
   
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
