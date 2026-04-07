@@ -409,34 +409,39 @@ def send_to_telegram(processed_data):
         requests.post(url, json={"chat_id": clean_chat_id, "text": final_message})
 
 if __name__ == "__main__":
-    print("Startuji stahování dat ze všech zdrojů...")
+    print("Start downloading data from all sources...")
     raw_data = get_all_data()
     processed_data = {}
     
-    print("Překládám data, převádím jednotky a žádám AI o zhodnocení...")
+    # Check if translation is enabled via environment variable (default is false)
+    enable_translation = os.environ.get("ENABLE_TRANSLATION", "false").lower() == "true"
+    
+    print(f"Translation feature enabled: {enable_translation}")
+    print("Processing data and requesting AI evaluation...")
+    
     for region, text_or_dict in raw_data.items():
         
-        # --- 1. TRANSLATION AND UNIT CONVERSION ---
+        # --- 1. OPTIONAL TRANSLATION ---
         translated_data = text_or_dict
         
-        if region == "Rakousko":
-            translated_data = {}
-            for day, txt in text_or_dict.items():
-                print(f" -> Translating {region} ({day})...")
-                translated_data[day] = translate_and_format_weather(txt, "German")
+        if enable_translation:
+            if region == "Rakousko":
+                translated_data = {}
+                for day, txt in text_or_dict.items():
+                    print(f" -> Translating {region} ({day})...")
+                    translated_data[day] = translate_and_format_weather(txt, "German")
+                    
+            elif region in ["Německo", "Severní Alpy", "Jižní Alpy"]:
+                print(f" -> Translating {region}...")
+                translated_data = translate_and_format_weather(text_or_dict, "German")
                 
-        elif region in ["Německo", "Severní Alpy", "Jižní Alpy"]:
-            print(f" -> Translating {region}...")
-            translated_data = translate_and_format_weather(text_or_dict, "German")
+            elif region == "Slovenia":
+                print(f" -> Translating {region}...")
+                translated_data = translate_and_format_weather(text_or_dict, "Slovenian")
+        else:
+            print(f" -> Skipping translation for {region}.")
             
-        elif region == "Slovinsko":
-            print(f" -> Translating {region}...")
-            translated_data = translate_and_format_weather(text_or_dict, "Slovenian")
-            
-        # Region "Česko" is skipped and remains strictly in the original Czech
-        
-        # --- 2. AI EVALUATION ---
-        # The AI Instructor now evaluates the beautifully translated Czech text
+        # --- 2. AI EVALUATION (Always ON) ---
         if isinstance(translated_data, dict):
             combined_text = "\n\n".join([f"--- {day} ---\n{txt}" for day, txt in translated_data.items()])
             ai_evaluation = get_ai_evaluation(region, combined_text)
@@ -445,14 +450,13 @@ if __name__ == "__main__":
             
         # --- 3. STORE THE RESULTS ---
         processed_data[region] = {
-            'raw': translated_data, # Contains the nicely formatted Markdown text
+            'raw': translated_data, 
             'ai': ai_evaluation
         }
         
     if processed_data:
         create_html_page(processed_data)
-        # Volání Telegram funkce je aktuálně zakomentováno:
-        send_to_telegram(processed_data)
-        print("Hotovo! Webová stránka vygenerována.")
+        print("Done! Web page generated.")
     else:
-        print("Chyba: Žádná data nebyla stažena.")
+        print("Error: No data downloaded.")
+        
