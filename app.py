@@ -16,6 +16,7 @@ Napiš stručné zhodnocení letových podmínek (max 3-4 věty).
 Publikum jsou zkušení paraglidový piloti s cca 5 lety praxe létání v ČR i Alpách.
 Zaměř se i na předpověd pro nadcházející dny a na bezpečnost, termiku a sílu větru. 
 Zmiň případné varování, na které by měl pilot myslet.
+Finální formulaci piš na profesionální úrovni, né pro amatéry. Raději odpověd zpracovávej déle, ale kvalitněji.
 Rychlost větru udávej v km/h místo knotů, výšku v metrech místo stop.
 Vynech oslovení, text je součástí stránky, kde není třeba.
 Neformátuj text pomocí markdownu (hvězdičky apod.), piš čistý text.
