@@ -378,35 +378,49 @@ def create_html_page(processed_data):
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
     print("HTML stránka úspěšně vygenerována.")
-
+   
 def send_to_telegram(processed_data):
     token = os.environ.get("TELEGRAM_TOKEN")
     chat_ids_string = os.environ.get("TELEGRAM_CHAT_ID")
     
-    if not chat_ids_string: 
+    if not chat_ids_string or not token: 
+        print("Telegram credentials missing, skipping messages.")
         return
 
     chat_ids = chat_ids_string.split(",")
     display_order = ["Česko", "Rakousko", "Severní Alpy", "Jižní Alpy", "Slovinsko"] 
+    
+    # Out-of-the-box: We combine all AI summaries into a single digest message 
+    # to prevent spamming the user's phone with multiple notifications.
+    briefing_text = "🌤 *DENNÍ LETOVÝ BRIEFING* 🌤\n\n"
+    
+    for region in display_order:
+        if region in processed_data:
+            ai_text = processed_data[region]['ai']
+            # Using Markdown asterisks for bold region names
+            briefing_text += f"📍 *{region}*\n{ai_text}\n\n"
+            
+    website_url = "https://vojtechbohman.github.io/vs-weather-forecast/"
+    briefing_text += f"🚀 *Kompletní data a surové předpovědi:*\n{website_url}"
     
     for chat_id in chat_ids:
         clean_chat_id = chat_id.strip()
         if not clean_chat_id: 
             continue
             
-        # 1. Send AI summaries for each region
-        for region in display_order:
-            if region in processed_data:
-                ai_text = processed_data[region]['ai']
-                message = f"🌤 *{region}*\n{ai_text}"
-                url = f"https://api.telegram.org/bot{token}/sendMessage"
-                requests.post(url, json={"chat_id": clean_chat_id, "text": message[:4000]})
-                
-        # 2. Send the final message with the link to the web dashboard
-        website_url = "https://vojtechbohman.github.io/vs-weather-forecast/"
-        final_message = f"🚀 Kompletní letový briefing s detailními daty najdeš zde:\n{website_url}"
         url = f"https://api.telegram.org/bot{token}/sendMessage"
-        requests.post(url, json={"chat_id": clean_chat_id, "text": final_message})
+        
+        # Send the combined message and explicitly enable Markdown formatting
+        try:
+            response = requests.post(url, json={
+                "chat_id": clean_chat_id, 
+                "text": briefing_text[:4000], # Safe cut-off for Telegram's character limit
+                "parse_mode": "Markdown",
+                "disable_web_page_preview": True # Keeps the chat clean without huge link previews
+            })
+            response.raise_for_status()
+        except Exception as e:
+            print(f"Failed to send Telegram message to {clean_chat_id}: {e}")
 
 if __name__ == "__main__":
     print("Start downloading data from all sources...")
@@ -456,7 +470,8 @@ if __name__ == "__main__":
         
     if processed_data:
         create_html_page(processed_data)
-        print("Done! Web page generated.")
+        send_to_telegram(processed_data)
+        print("Done! Web page generated and Telegram messages sent.")
     else:
         print("Error: No data downloaded.")
         
