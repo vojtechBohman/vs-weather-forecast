@@ -12,10 +12,8 @@ from google import genai
 # Značky {region} a {forecast_text} skript automaticky nahradí reálnými daty.
 AI_PROMPT_TEMPLATE = """
 Jsi zkušený instruktor paraglidingu. Přečti si předpověď počasí pro oblast: '{region}'.
-Napiš stručné zhodnocení letových podmínek (max 3-4 věty).
+Napiš zhodnocení letových podmínek (max 3-4 věty). Zaměř se i na předpověd pro nadcházející dny, na termiku a sílu větru.
 Publikum jsou zkušení paraglidový piloti s cca 5 lety praxe létání v ČR i Alpách.
-Zaměř se i na předpověd pro nadcházející dny a na bezpečnost, termiku a sílu větru. 
-Zmiň případné varování, na které by měl pilot myslet.
 Finální formulaci piš na profesionální úrovni, né pro amatéry. Raději odpověd zpracovávej déle, ale kvalitněji.
 Rychlost větru udávej v km/h místo knotů, výšku v metrech místo stop.
 Vynech oslovení, text je součástí stránky, kde není třeba.
