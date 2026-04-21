@@ -3,7 +3,7 @@ name: Forecast AI with pages
 on:
   schedule:
     # Předpověď vychází obvykle kolem 05:50 UTC
-    - cron: '03 6 * * *'
+    - cron: '50 5 * * *'
     # Evening run
     # - cron: '03 19 * * *'
   workflow_dispatch:
