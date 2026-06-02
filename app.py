@@ -10,6 +10,8 @@ from google import genai
 # =====================================================================
 # Zde můžeš libovolně ladit chování a tón umělé inteligence. 
 # Značky {region} a {forecast_text} skript automaticky nahradí reálnými daty.
+AI_PROMPT_MODEL_TRANSLATE = 'gemini-3.5-flash'
+AI_PROMPT_MODEL_INSTUCT = 'gemini-3.1-pro-preview'
 AI_PROMPT_TEMPLATE = """
 Jsi zkušený instruktor paraglidingu. Přečti si předpověď počasí pro oblast: '{region}'.
 Napiš zhodnocení letových podmínek (max 3-4 věty). Zaměř se i na předpověd pro nadcházející dny, na termiku a sílu větru.
@@ -51,9 +53,8 @@ def translate_and_format_weather(text, source_language):
         {text}
         """
         
-        # Using version 2.5 as instructed
         response = client.models.generate_content(
-            model='gemini-3.5-flash',
+            model=AI_PROMPT_MODEL_TRANSLATE,
             contents=prompt
         )
         return response.text.strip()
@@ -233,7 +234,7 @@ def get_ai_evaluation(region, forecast_text):
         prompt = AI_PROMPT_TEMPLATE.format(region=region, forecast_text=forecast_text)
         
         response = client.models.generate_content(
-            model='gemini-3.1-pro',
+            model=AI_PROMPT_MODEL_INSTUCT,
             contents=prompt
         )
         return response.text.strip()
