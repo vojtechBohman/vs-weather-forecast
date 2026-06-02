@@ -53,7 +53,7 @@ def translate_and_format_weather(text, source_language):
         
         # Using version 2.5 as instructed
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-3.5-flash',
             contents=prompt
         )
         return response.text.strip()
@@ -233,7 +233,7 @@ def get_ai_evaluation(region, forecast_text):
         prompt = AI_PROMPT_TEMPLATE.format(region=region, forecast_text=forecast_text)
         
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-3.1-pro',
             contents=prompt
         )
         return response.text.strip()
