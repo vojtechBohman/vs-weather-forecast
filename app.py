@@ -449,7 +449,7 @@ if __name__ == "__main__":
                 print(f" -> Translating {region}...")
                 translated_data = translate_and_format_weather(text_or_dict, "German")
                 
-            elif region == "Slovenia":
+            elif region == "Slovinsko":
                 print(f" -> Translating {region}...")
                 translated_data = translate_and_format_weather(text_or_dict, "Slovenian")
         else:
